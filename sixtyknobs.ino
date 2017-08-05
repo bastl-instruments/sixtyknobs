@@ -17,6 +17,9 @@
 #define LED_PIN 18
 #define BUTTON_PIN 19
 
+//Reset to Factory Presets
+bool reset_request = true; 
+bool reset_accepted = false;
 
 MIDI_CREATE_DEFAULT_INSTANCE();
 
@@ -74,6 +77,29 @@ void setup() {
 /*---   MAIN LOOP   ---*/
 //all the MIDI.read() statements are here to reduce the latency of the device
 void loop() {
+
+  //reset request until button is released
+  if (digitalRead(BUTTON_PIN)) {
+    reset_request = false;
+    digitalWrite(LED_PIN, HIGH);
+  }
+  //if reset_request is held for more than 5 secs then reset_accepted
+  while (reset_request) {
+    digitalWrite(LED_PIN, LOW); //led turns off during request time
+    if (millis() > 5000) {
+      reset_accepted = true;
+      reset_request = false;
+    }
+  }
+  //if reset_accepted then clean eeprom and formatFactory
+  if (reset_accepted) {
+    for (int i = 0; i < EEPROM.length(); i++) {
+      EEPROM.write(i, 0);
+    }
+    digitalWrite(LED_PIN, HIGH);
+    reset_accepted = false;
+    formatFactory();
+  }
   
   // we turn the LED on
   digitalWrite(LED_PIN, HIGH);
