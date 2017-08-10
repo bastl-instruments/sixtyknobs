@@ -17,7 +17,6 @@
 #define LED_PIN 18
 #define BUTTON_PIN 19
 
-
 MIDI_CREATE_DEFAULT_INSTANCE();
 
 /*---   INIT CODE   ---*/
@@ -34,6 +33,33 @@ void setup() {
   pinMode(SECONDARY_MUX_S2, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+  // Reset to Factory Presets
+  bool reset_request = true; 
+  bool reset_accepted = false;
+  
+  //reset request until button is released
+  if (digitalRead(BUTTON_PIN)) {
+    reset_request = false;
+    digitalWrite(LED_PIN, HIGH);
+  }
+  //if reset_request is held for more than 5 secs then reset_accepted
+  while (reset_request) {
+    digitalWrite(LED_PIN, LOW);
+    if (millis() > reset_timeout) {
+      reset_accepted = true;
+      reset_request = false;
+    }
+  }
+  //if reset_accepted then clean eeprom
+  if (reset_accepted) {
+    for (int i = 0; i < EEPROM.length(); i++) {
+      EEPROM.write(i, 0);
+    }
+    digitalWrite(LED_PIN, HIGH);
+    reset_accepted = false;
+  }
+  
 
   //if this is the first time the device is powered on, we write the factory presets in the memory
   if(!isEEPROMvalid()) {
